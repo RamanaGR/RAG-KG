@@ -1,0 +1,19 @@
+# Environment & config
+python-dotenv>=1.0.0
+
+# Neo4j
+neo4j>=5.15.0
+
+# LangChain
+langchain>=0.3.0
+langchain-community>=0.3.0
+langchain-openai>=0.2.0
+
+# Document loading & splitting
+pypdf>=4.0.0
+langchain-text-splitters>=0.3.0
+
+# Embeddings & LLM
+openai>=1.0.0
+# Ollama: run `ollama serve` and pull models (e.g. ollama pull nomic-embed-text llama3.2)
+# No extra pip package required; langchain_community provides ChatOllama & OllamaEmbeddings
