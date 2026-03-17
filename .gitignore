@@ -50,3 +50,6 @@ htmlcov/
 # Logs
 *.log
 logs/
+
+# Stray pip / shell artifacts
+=0.1.0

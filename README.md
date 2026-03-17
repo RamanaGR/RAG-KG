@@ -25,19 +25,18 @@ RAG-KG/
 ├── main.py           # CLI: ask questions, optional --ingest
 ├── requirements.txt
 ├── README.md
-├── healthcare_rag_app.py   # Healthcare RAG (dev-healthcare): hybrid Cypher + Vector, Ollama only
-├── ingest_healthcare.py    # Ingest healthcare CSV → Neo4j with 768-dim vector index
-├── healthcare/
-│   └── healthcare.csv      # Sample Provider, Patient, Specialization, Location, Bio
 └── src/
     ├── __init__.py
     ├── database.py   # Neo4j connection, schema (constraints + vector index)
     ├── ingest.py     # Load PDF/Text → chunk → embed → upsert to Neo4j
     ├── retrieval.py  # Hybrid search (vector + Cypher graph) + RAG chain
+    ├── ingest_healthcare.py   # Ingest healthcare CSV → Neo4j with 768-dim vector index
+    ├── healthcare_rag_app.py  # Healthcare RAG: hybrid Cypher + Vector, Ollama only
     ├── healthcare/
     │   ├── __init__.py
-    │   └── schema.py # Healthcare constraints + 768-dim vector index for provider bios
-    └── sample/       # Optional sample scripts
+    │   ├── schema.py  # Healthcare constraints + 768-dim vector index for provider bios
+    │   └── healthcare.csv  # Provider, Patient, Specialization, Location, Bio
+    └── rag_with_kg/  # Sample scripts (vector_db, health_care_kg, health_care_lc_retrieval)
 ```
 
 ---
@@ -129,8 +128,6 @@ python main.py --ingest doc.pdf "What is this document about?"
 
 ---
 
----
-
 ## Healthcare RAG (branch `dev-healthcare`)
 
 Production-ready **Healthcare RAG** on branch `dev-healthcare`: hybrid retrieval over a provider graph using **Ollama only** (nomic-embed-text, llama3.2) and a **768-dimension** vector index.
@@ -149,17 +146,17 @@ Production-ready **Healthcare RAG** on branch `dev-healthcare`: hybrid retrieval
 ### Ingest
 
 ```bash
-# Ingest healthcare/healthcare.csv (Provider, Patient, Specialization, Location, Bio)
-python ingest_healthcare.py
-# Or: python ingest_healthcare.py path/to/healthcare.csv
+# Ingest src/healthcare/healthcare.csv (Provider, Patient, Specialization, Location, Bio)
+python -m src.ingest_healthcare
+# Or: python -m src.ingest_healthcare path/to/healthcare.csv
 ```
 
 ### Run Healthcare RAG
 
 ```bash
-python healthcare_rag_app.py "Find a cardiologist"
-# Interactive: python healthcare_rag_app.py
-# Ingest then ask: python healthcare_rag_app.py --ingest healthcare/healthcare.csv "Who specializes in neurology?"
+python -m src.healthcare_rag_app "Find a cardiologist"
+# Interactive: python -m src.healthcare_rag_app
+# Ingest then ask: python -m src.healthcare_rag_app --ingest src/healthcare/healthcare.csv "Who specializes in neurology?"
 ```
 
 ### Hybrid retriever
