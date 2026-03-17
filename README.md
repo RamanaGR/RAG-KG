@@ -25,11 +25,18 @@ RAG-KG/
 ├── main.py           # CLI: ask questions, optional --ingest
 ├── requirements.txt
 ├── README.md
+├── healthcare_rag_app.py   # Healthcare RAG (dev-healthcare): hybrid Cypher + Vector, Ollama only
+├── ingest_healthcare.py    # Ingest healthcare CSV → Neo4j with 768-dim vector index
+├── healthcare/
+│   └── healthcare.csv      # Sample Provider, Patient, Specialization, Location, Bio
 └── src/
     ├── __init__.py
     ├── database.py   # Neo4j connection, schema (constraints + vector index)
     ├── ingest.py     # Load PDF/Text → chunk → embed → upsert to Neo4j
     ├── retrieval.py  # Hybrid search (vector + Cypher graph) + RAG chain
+    ├── healthcare/
+    │   ├── __init__.py
+    │   └── schema.py # Healthcare constraints + 768-dim vector index for provider bios
     └── sample/       # Optional sample scripts
 ```
 
@@ -119,6 +126,46 @@ python main.py --ingest doc.pdf "What is this document about?"
 1. **Ingest (`src/ingest.py`):** Loads PDF/Text → chunks with overlap → embeds (OpenAI or Ollama) → upserts **Chunk** nodes and optional **Entity** nodes with **(Chunk)-[:MENTIONS]->(Entity)**.
 2. **Retrieval (`src/retrieval.py`):** Embeds the question → **vector search** on `Chunk.embedding` → **graph expansion** via Cypher: chunks that share **Entity** nodes with the top vector hits are added for context.
 3. **Answer:** Retrieved chunks are passed as context to the LLM (OpenAI or Ollama); the model returns an answer.
+
+---
+
+---
+
+## Healthcare RAG (branch `dev-healthcare`)
+
+Production-ready **Healthcare RAG** on branch `dev-healthcare`: hybrid retrieval over a provider graph using **Ollama only** (nomic-embed-text, llama3.2) and a **768-dimension** vector index.
+
+### Schema
+
+- **Nodes:** `HealthcareProvider` (name, bio, bio_embedding), `Patient`, `Specialization`, `Location`
+- **Relationships:** `(HealthcareProvider)-[:SPECIALIZES_IN]->(Specialization)`, `-[:LOCATED_AT]->(Location)`, `-[:TREATS]->(Patient)`
+
+### Setup
+
+- Use Neo4j credentials (e.g. from `note-neo4j-creds.md`). Set `NEO4J_URI`, `NEO4J_USER`/`NEO4J_USERNAME`, `NEO4J_PASSWORD`, and optionally `NEO4J_DATABASE`.
+- Set `OLLAMA_BASE_URL` if Ollama is not at `http://localhost:11434`.
+- Run `ollama serve` and pull: `ollama pull nomic-embed-text` and `ollama pull llama3.2`.
+
+### Ingest
+
+```bash
+# Ingest healthcare/healthcare.csv (Provider, Patient, Specialization, Location, Bio)
+python ingest_healthcare.py
+# Or: python ingest_healthcare.py path/to/healthcare.csv
+```
+
+### Run Healthcare RAG
+
+```bash
+python healthcare_rag_app.py "Find a cardiologist"
+# Interactive: python healthcare_rag_app.py
+# Ingest then ask: python healthcare_rag_app.py --ingest healthcare/healthcare.csv "Who specializes in neurology?"
+```
+
+### Hybrid retriever
+
+- **Cypher:** Traverses `(HealthcareProvider)-[:SPECIALIZES_IN]->(Specialization)` and `-[:LOCATED_AT]->(Location)`; keyword match on specialization, location, provider name.
+- **Vector:** Similarity search on `HealthcareProvider.bio_embedding` (768-dim, Nomic).
 
 ---
 
